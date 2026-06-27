@@ -1,0 +1,363 @@
+"""
+grtp/spacetime/kerr.py
+======================
+Kerr spacetime geometry in Boyer-Lindquist (BL) coordinates.
+
+Physical conventions
+--------------------
+  Signature        : (−,+,+,+)
+  Units            : Geometrized, G = c = 1
+  Coordinates      : x^μ = (t, r, θ, φ),  index order 0, 1, 2, 3
+  Spin parameter   : a = J/M,   |a| ≤ M
+  Mass             : M  (set M = 1 for geometric units with r in units of r_g)
+
+Key scalars
+-----------
+  Σ ≡ r² + a² cos²θ
+  Δ ≡ r² − 2Mr + a²
+  A ≡ (r²+a²)² − Δ a² sin²θ
+
+ZAMO tetrad
+-----------
+  Zero Angular Momentum Observers have 4-velocity u^μ_ZAMO ∝ (1, 0, 0, ω)
+  where ω = 2Mra/A is the frame-dragging angular velocity.
+
+  The orthonormal ZAMO tetrad (covariant) basis vectors e^μ_(a) in BL coords:
+
+    e^μ_(t̂) = (α⁻¹,     0,     0,  ω/α)
+    e^μ_(r̂) = (0,  √(Δ/Σ),     0,    0)
+    e^μ_(θ̂) = (0,       0, 1/√Σ,    0)
+    e^μ_(φ̂) = (0,       0,     0,  √Σ/(sinθ √A))
+
+  with lapse  α = √(ΣΔ/A).
+
+References
+----------
+  Bardeen, Press & Teukolsky (1972), ApJ 178, 347
+  Misner, Thorne & Wheeler (1973), §33.2–33.4
+  Komissarov (2004), MNRAS 350, 427 — ZAMO tetrad form
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from numpy.typing import NDArray
+
+__all__ = [
+    "kerr_scalars",
+    "metric",
+    "inverse_metric",
+    "christoffel",
+    "zamo_tetrad",
+    "frame_drag_omega",
+    "lapse_function",
+]
+
+
+# ---------------------------------------------------------------------------
+# 1.  Fundamental Kerr scalars
+# ---------------------------------------------------------------------------
+
+def kerr_scalars(
+    r: float, theta: float, M: float, a: float
+) -> tuple[float, float, float, float, float]:
+    """
+    Compute the five fundamental scalar quantities of Kerr geometry.
+
+    Parameters
+    ----------
+    r, theta : float   Boyer-Lindquist radius and polar angle [rad]
+    M        : float   Black hole mass (M = 1 in geometrized units)
+    a        : float   Spin parameter  |a| ≤ M
+
+    Returns
+    -------
+    Sigma : r² + a² cos²θ
+    Delta : r² − 2Mr + a²
+    sin_t : sin θ
+    cos_t : cos θ
+    A     : (r²+a²)² − Δ a² sin²θ   [circumferential component]
+    """
+    cos_t = np.cos(theta)
+    sin_t = np.sin(theta)
+    Sigma = r * r + a * a * cos_t * cos_t
+    Delta = r * r - 2.0 * M * r + a * a
+    A     = (r * r + a * a) ** 2 - Delta * a * a * sin_t * sin_t
+    return Sigma, Delta, sin_t, cos_t, A
+
+
+# ---------------------------------------------------------------------------
+# 2.  Metric and its inverse
+# ---------------------------------------------------------------------------
+
+def metric(r: float, theta: float, M: float, a: float) -> NDArray:
+    """
+    Covariant Kerr metric tensor g_μν in Boyer-Lindquist coordinates.
+
+    Non-zero components (signature −+++) :
+      g_tt  = −(1 − 2Mr/Σ)
+      g_tφ  = g_φt = −2Mra sin²θ / Σ
+      g_rr  = Σ/Δ
+      g_θθ  = Σ
+      g_φφ  = (A/Σ) sin²θ
+
+    Returns
+    -------
+    g : (4,4) ndarray
+    """
+    Sigma, Delta, sin_t, cos_t, A = kerr_scalars(r, theta, M, a)
+    sin2 = sin_t * sin_t
+
+    g = np.zeros((4, 4))
+    g[0, 0] = -(1.0 - 2.0 * M * r / Sigma)
+    g[1, 1] =  Sigma / Delta
+    g[2, 2] =  Sigma
+    g[3, 3] =  A * sin2 / Sigma
+    g[0, 3] = g[3, 0] = -2.0 * M * r * a * sin2 / Sigma
+    return g
+
+
+def inverse_metric(r: float, theta: float, M: float, a: float) -> NDArray:
+    """
+    Contravariant Kerr metric tensor g^μν (analytical inverse).
+
+    Non-zero components:
+      g^tt  = −A / (Σ Δ)
+      g^tφ  = g^φt = −2Mra / (Σ Δ)
+      g^rr  = Δ / Σ
+      g^θθ  = 1 / Σ
+      g^φφ  = (Δ − a² sin²θ) / (Σ Δ sin²θ)
+
+    These follow from inverting the 2×2 (t,φ) block analytically and noting
+    that (r,r) and (θ,θ) decouple.
+
+    Returns
+    -------
+    g_inv : (4,4) ndarray
+    """
+    Sigma, Delta, sin_t, cos_t, A = kerr_scalars(r, theta, M, a)
+    sin2   = sin_t * sin_t
+    SigDel = Sigma * Delta
+
+    g_inv = np.zeros((4, 4))
+    g_inv[0, 0] = -A / SigDel
+    g_inv[0, 3] = g_inv[3, 0] = -2.0 * M * r * a / SigDel
+    g_inv[1, 1] =  Delta / Sigma
+    g_inv[2, 2] =  1.0 / Sigma
+
+    # Guard against the coordinate singularity at the poles (sinθ = 0).
+    # Physically unreachable for ergosphere dynamics; clamp to avoid NaN.
+    if sin2 > 1e-15:
+        g_inv[3, 3] = (Delta - a * a * sin2) / (SigDel * sin2)
+    else:
+        g_inv[3, 3] = 0.0
+
+    return g_inv
+
+
+# ---------------------------------------------------------------------------
+# 3.  Christoffel symbols  (numerical, 4th-order centred finite differences)
+# ---------------------------------------------------------------------------
+#
+# Note on implementation strategy:
+#   Writing out all 40 independent Γ^μ_αβ analytically for Kerr is
+#   error-prone (hundreds of terms).  Instead we exploit the Killing symmetries:
+#   ∂_t g = ∂_φ g = 0  (stationarity and axisymmetry), so only ∂_r g and ∂_θ g
+#   are non-zero.  We compute these to 4th-order accuracy with centred finite
+#   differences.  The resulting Christoffels are correct to O(h⁴) ≈ O(10⁻²⁰)
+#   for h = 1e-5, far exceeding the tolerance requirements of DOP853.
+#
+#   A SymPy-generated analytical version (`christoffel_analytical.py`) can be
+#   hot-swapped here for production Numba-JIT runs; it is generated by
+#   `tools/generate_christoffels.py` and lives in the same directory.
+# ---------------------------------------------------------------------------
+
+def _metric_partials(
+    r: float, theta: float, M: float, a: float, h: float = 1e-5
+) -> NDArray:
+    """
+    First partial derivatives of g_μν using 4th-order centred differences.
+
+    Exploits stationarity (∂_t g = 0) and axisymmetry (∂_φ g = 0).
+
+    Returns
+    -------
+    dg : (4, 4, 4) ndarray
+         dg[coord_idx, μ, ν] = ∂_{x^coord} g_μν
+         dg[0] = ∂_t g = 0
+         dg[1] = ∂_r g        (finite-differenced)
+         dg[2] = ∂_θ g        (finite-differenced)
+         dg[3] = ∂_φ g = 0
+    """
+    dg = np.zeros((4, 4, 4))
+
+    # 4th-order centred: (−f(+2h) + 8f(+h) − 8f(−h) + f(−2h)) / 12h
+    # ∂_r g  (coordinate index 1)
+    gp2 = metric(r + 2.0 * h, theta, M, a)
+    gp1 = metric(r +       h, theta, M, a)
+    gm1 = metric(r -       h, theta, M, a)
+    gm2 = metric(r - 2.0 * h, theta, M, a)
+    dg[1] = (-gp2 + 8.0 * gp1 - 8.0 * gm1 + gm2) / (12.0 * h)
+
+    # ∂_θ g  (coordinate index 2)
+    gp2 = metric(r, theta + 2.0 * h, M, a)
+    gp1 = metric(r, theta +       h, M, a)
+    gm1 = metric(r, theta -       h, M, a)
+    gm2 = metric(r, theta - 2.0 * h, M, a)
+    dg[2] = (-gp2 + 8.0 * gp1 - 8.0 * gm1 + gm2) / (12.0 * h)
+
+    return dg
+
+
+def christoffel(
+    r: float, theta: float, M: float, a: float, h: float = 1e-5
+) -> NDArray:
+    """
+    Christoffel symbols Γ^μ_αβ of the Kerr metric.
+
+    Computed via the standard metric formula:
+
+      Γ^μ_αβ = ½ g^μν ( ∂_α g_νβ + ∂_β g_να − ∂_ν g_αβ )
+
+    Parameters
+    ----------
+    r, theta : float   BL position
+    M        : float   Black hole mass
+    a        : float   Spin parameter
+    h        : float   Finite-difference step  (default 1e-5, giving ~O(h⁴) error)
+
+    Returns
+    -------
+    Gamma : (4, 4, 4) ndarray
+            Gamma[μ, α, β] = Γ^μ_αβ    (symmetric in α, β by construction)
+    """
+    g_inv = inverse_metric(r, theta, M, a)          # shape (4,4)
+    dg    = _metric_partials(r, theta, M, a, h)     # shape (4,4,4)
+
+    # Γ_μαβ = ½ (∂_α g_μβ + ∂_β g_μα − ∂_μ g_αβ)  [all-lower indices]
+    # Using index notation where dg[λ, μ, ν] = ∂_λ g_μν :
+    #
+    #   Gamma_down[ν, α, β] = ½ (dg[α,ν,β] + dg[β,ν,α] - dg[ν,α,β])
+    #
+    # Then raise: Γ^μ_αβ = g^μν Γ_ναβ
+
+    # Build Γ_ναβ  (shape 4×4×4)
+    Gamma_down = np.zeros((4, 4, 4))
+    for alpha in range(4):
+        for beta in range(4):
+            for nu in range(4):
+                Gamma_down[nu, alpha, beta] = 0.5 * (
+                    dg[alpha, nu, beta]
+                    + dg[beta, nu, alpha]
+                    - dg[nu, alpha, beta]
+                )
+
+    # Raise first index: Γ^μ_αβ = g^μν Γ_ναβ
+    Gamma = np.einsum("mn,nab->mab", g_inv, Gamma_down)
+    return Gamma
+
+
+# ---------------------------------------------------------------------------
+# 4.  ZAMO frame quantities
+# ---------------------------------------------------------------------------
+
+def frame_drag_omega(r: float, theta: float, M: float, a: float) -> float:
+    """
+    Frame-dragging angular velocity of ZAMOs:
+
+      ω = 2Mra / A
+
+    This is the angular velocity Ω = dφ/dt of a zero-angular-momentum
+    observer, equal to −g^tφ / g^φφ in inverse-metric form.  Inside the
+    ergosphere, ω is large enough to force all massive observers into
+    co-rotation with the black hole, enabling the Penrose process.
+
+    Parameters
+    ----------
+    r, theta : float   BL position
+    M, a     : float   Mass and spin
+
+    Returns
+    -------
+    omega : float   [rad s⁻¹ in geometrized units with M=1 → rad/r_g]
+    """
+    Sigma, Delta, sin_t, cos_t, A = kerr_scalars(r, theta, M, a)
+    return 2.0 * M * r * a / A
+
+
+def lapse_function(r: float, theta: float, M: float, a: float) -> float:
+    """
+    ZAMO lapse function:  α = √(ΣΔ/A).
+
+    Encodes the gravitational time dilation of ZAMOs relative to
+    Boyer-Lindquist coordinate time.  Vanishes at the event horizon (Δ→0).
+
+    Returns
+    -------
+    alpha : float  (dimensionless)
+    """
+    Sigma, Delta, sin_t, cos_t, A = kerr_scalars(r, theta, M, a)
+    return np.sqrt(Sigma * Delta / A)
+
+
+def zamo_tetrad(r: float, theta: float, M: float, a: float) -> NDArray:
+    """
+    ZAMO orthonormal tetrad in Boyer-Lindquist coordinates.
+
+    Returns a (4, 4) array  tetrad[frame_index, coord_index]  where
+    each row is a tetrad basis vector:
+
+      Row 0 — e^μ_(t̂) = ( 1/α,       0,      0,  ω/α   )
+      Row 1 — e^μ_(r̂) = ( 0,   √(Δ/Σ),      0,  0     )
+      Row 2 — e^μ_(θ̂) = ( 0,       0,   1/√Σ,   0     )
+      Row 3 — e^μ_(φ̂) = ( 0,       0,      0,  √Σ/(sinθ √A) )
+
+    These vectors satisfy the orthonormality conditions:
+      g_μν e^μ_(a) e^ν_(b) = η_(ab) = diag(−1, +1, +1, +1)
+
+    Derivation notes
+    ----------------
+    Row 0 is the ZAMO 4-velocity.  The φ-component ω/α arises because ZAMOs
+    have L = 0 yet co-rotate (u^φ/u^t = ω, the frame-dragging rate).
+
+    Row 3 is purely in the φ-direction; orthogonality to Row 0 holds
+    because g_tφ + g_φφ ω = 0 (verified by direct substitution with the
+    ZAMO frame-dragging formula).
+
+    The result is the standard ZAMO tetrad of Bardeen et al. (1972) and
+    Komissarov (2004), used widely in GRMHD codes for frame decomposition.
+
+    Parameters
+    ----------
+    r, theta : float   BL position
+    M, a     : float   Mass and spin
+
+    Returns
+    -------
+    tetrad : (4, 4) ndarray
+    """
+    Sigma, Delta, sin_t, cos_t, A = kerr_scalars(r, theta, M, a)
+
+    alpha = np.sqrt(Sigma * Delta / A)      # lapse
+    omega = 2.0 * M * r * a / A            # frame-dragging Ω
+
+    # Guard pole singularity (sinθ = 0): coordinates ill-defined there;
+    # ergosphere dynamics never reach the poles.
+    sin_guard = max(abs(sin_t), 1e-12)
+
+    tetrad = np.zeros((4, 4))
+
+    # ê_(t̂) — ZAMO 4-velocity
+    tetrad[0, 0] = 1.0 / alpha
+    tetrad[0, 3] = omega / alpha
+
+    # ê_(r̂) — radial spacelike leg
+    tetrad[1, 1] = np.sqrt(Delta / Sigma)
+
+    # ê_(θ̂) — polar spacelike leg
+    tetrad[2, 2] = 1.0 / np.sqrt(Sigma)
+
+    # ê_(φ̂) — azimuthal spacelike leg
+    tetrad[3, 3] = np.sqrt(Sigma / A) / sin_guard
+
+    return tetrad

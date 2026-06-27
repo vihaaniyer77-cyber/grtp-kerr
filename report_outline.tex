@@ -1,0 +1,133 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{color}
+
+% --- Hyperref Setup ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+% --- Title Info ---
+\title{Numerical Analysis of Charged Test-Particle Dynamics and Chaos in the Magnetised Kerr Ergosphere}
+\author{Vihaa Iyer \\ \small Under the supervision of Dr. Ripperda}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The GRTP-Kerr framework simulates the dynamics of charged test particles in the vicinity of a spinning Kerr black hole, studying how magnetic reconnection near a 2D neutral X-point inside the ergosphere affects energy extraction via the magnetic Penrose process. This report outlines the numerical and physical architecture of the codebase, mapping individual python components to their respective physical systems, explaining the role of the Magnetic Penrose Process (MPP), and detailing the implementation of chaos diagnostics.
+\end{abstract}
+
+\section{Introduction \& The Magnetic Penrose Process (MPP)}
+In the classical Penrose process, rotational energy is extracted from a Kerr black hole when a particle enters the ergosphere and splits into two fragments. One fragment falls past the event horizon on a trajectory with negative energy relative to infinity ($E_\infty < 0$), forcing its escaping partner to emerge with $E_{\text{escape}} > E_{\text{initial}}$ by conservation of energy. However, this classical mechanism is astrophysically constrained: it requires a relative separation velocity $v > 0.5c$, which is rarely achieved by thermal particle collisions.
+
+The \textbf{Magnetic Penrose Process (MPP)} overcomes this limitation by incorporating electromagnetic forces. When a reconnection current sheet forms inside the ergosphere (modeled here via a 2D neutral X-point field), the reconnecting electric field $E^{\hat{\varphi}}$ does direct work on the charged particle population. The particle energy is defined by:
+\begin{equation}
+    E_\infty = - \left( g_{tt} u^t + g_{t\phi} u^\phi \right) - \frac{q}{m} A_t
+\end{equation}
+The presence of the electromagnetic vector potential $A_t$ allows particles to easily access negative energy states ($E_\infty < 0$) without requiring highly relativistic splitting velocities. Reconnection accelerates one particle into the horizon while ejecting its partner, achieving high-efficiency energy extraction.
+
+\section{Spacetime Geometry \& Horizon Boundaries}
+This section describes the mathematical background of the rotating black hole spacetime.
+\begin{itemize}
+    \item \textbf{Physics}: Kerr metric tensor in Boyer-Lindquist coordinates, lapse function $\alpha$, frame-dragging angular velocity $\omega = -g_{t\phi}/g_{\phi\phi}$, and ZAMO (Zero-Angular-Velocity-Observer) orthonormal frames.
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/spacetime/kerr.py}{\texttt{kerr.py}}: Computes $g_{\mu\nu}$, inverse $g^{\mu\nu}$, Christoffel symbols $\Gamma^\mu_{\alpha\beta}$, and the ZAMO tetrad transformations.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/spacetime/ergosphere.py}{\texttt{ergosphere.py}}: Computes critical radial boundaries ($r_+$ event horizon, $r_E(\theta)$ ergosphere limit, and $r_{\text{ISCO}}$ Bardeen stability limit).
+    \end{itemize}
+\end{itemize}
+
+\section{Reconnection Electromagnetic Fields}
+This section details the analytical electromagnetic fields overlaid on the curved background.
+\begin{itemize}
+    \item \textbf{Physics}: Localized 2D magnetic X-point reconnection configuration, poloidal magnetic fields reversing at the null-point, and the reconnecting out-of-plane electric field $E^{\hat{\varphi}}$.
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/fields/xpoint.py}{\texttt{xpoint.py}}: Defines $B^{\hat{r}}$, $B^{\hat{\theta}}$, and $E^{\hat{\varphi}}$ in the local ZAMO frame, then transforms them to Boyer-Lindquist coordinate components $F^{\mu\nu}$.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/fields/potentials.py}{\texttt{potentials.py}}: Solves for the 4-potential vector $A_\mu$ using Coulomb-gauge line integration, fitting it to high-speed cubic splines to compute the electrostatic contribution to the Killing energy.
+    \end{itemize}
+\end{itemize}
+
+\section{Relativistic Equations of Motion \& Adaptive ODE Solver}
+This section outlines the numerical integration engine of the pipeline.
+\begin{itemize}
+    \item \textbf{Physics}: Solving the 8-dimensional general-relativistic Lorentz force ODE:
+    \begin{equation}
+        \frac{du^\mu}{d\tau} = -\Gamma^\mu_{\alpha\beta} u^\alpha u^\beta + \frac{q}{m} F^\mu_\nu u^\nu
+    \end{equation}
+    subject to the timelike normalization constraint $g_{\mu\nu} u^\mu u^\nu = -1$.
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/integrator/equations.py}{\texttt{equations.py}}: Formulates the RHS equations of motion and monitors 4-velocity normalization drift.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/integrator/solver.py}{\texttt{solver.py}}: Wraps SciPy's DOP853 adaptive step integrator, registers boundary crossing events, and implements parallel batch processing using a process pool to bypass Python's GIL.
+    \end{itemize}
+\end{itemize}
+
+\section{Trajectory Diagnostics \& Topology Classification}
+This section details the classification and analysis of simulated particle orbits.
+\begin{itemize}
+    \item \textbf{Physics}: Total Killing energy conservation, energy extraction metrics, and topological sorting of particle fates.
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/analysis/energy.py}{\texttt{energy.py}}: Tracks mechanical and electromagnetic energy terms to calculate net energy gain.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/analysis/topology.py}{\texttt{topology.py}}: Classifies orbits into horizon plunge, escape with net gain, escape with net loss, and trapped bound states.
+    \end{itemize}
+\end{itemize}
+
+\section{Chaos Quantification: Lyapunov Exponents \& Poincaré Sections}
+This section discusses the mathematical indicators used to detect chaotic orbits.
+\begin{itemize}
+    \item \textbf{Physics}: Hamiltonian chaos in non-integrable systems, variational equations of deviation vectors ($dw/d\tau = Df(z)\cdot w$), Maximum Lyapunov Exponents (MLE), Kolmogorov-Arnold-Moser (KAM) tori, and surface of section maps.
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/analysis/lyapunov.py}{\texttt{lyapunov.py}}: Solves the 16D augmented variational system, utilizes an axisymmetric Jacobian cache (1000x speedup), applies Gram-Schmidt renormalization, and records equatorial crossings.
+    \end{itemize}
+\end{itemize}
+
+\section{Visualization Systems}
+This section outlines the rendering and plotting structures.
+\begin{itemize}
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/viz/basin_map.py}{\texttt{basin\_map.py}}: Plots the 2D basin-of-fate grid maps and efficiency heatmaps.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/viz/poincare.py}{\texttt{poincare.py}}: Plots coordinate projections ($u^r$ vs $r$) of equator crossings to reveal KAM structures.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/grtp/viz/trajectory.py}{\texttt{trajectory.py}}: Standardizes plotting aesthetics (fonts, line styles, dark themes) and renders 2D/3D orbit paths.
+    \end{itemize}
+\end{itemize}
+
+\section{Verification and Test Coverage}
+This section outlines the unit tests used to verify mathematical rigor.
+\begin{itemize}
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/tests/test_kerr.py}{\texttt{test\_kerr.py}}: Assesses metric signatures and flat-space limits.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/tests/test_geodesic.py}{\texttt{test\_geodesic.py}}: Validates Schwarzschild and Kerr ISCO stable bound orbits.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/tests/test_energy.py}{\texttt{test\_energy.py}}: Confirms energy conservation when $E=0$ and tests electromagnetic tensor anti-symmetry.
+    \end{itemize}
+\end{itemize}
+
+\section{Numerical Simulation Experiments}
+This section summarizes the primary experiments executed in the pipeline.
+\begin{itemize}
+    \item \textbf{Codebase Mapping}:
+    \begin{itemize}
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/experiments/exp1_efficiency_sweep.py}{\texttt{exp1\_efficiency\_sweep.py}}: Sweep of spins and X-point locations mapping the Penrose efficiency threshold.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/experiments/exp2_basin_map.py}{\texttt{exp2\_basin\_map.py}}: Resolves the fractal boundaries of phase space.
+        \item \href{file:///Users/vihaa/Desktop/grtp-kerr/experiments/exp3_lyapunov.py}{\texttt{exp3\_lyapunov.py}}: Computes the MLE grid and generates the corresponding Poincaré maps.
+    \end{itemize}
+\end{itemize}
+
+\end{document}

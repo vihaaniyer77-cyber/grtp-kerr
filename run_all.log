@@ -1,0 +1,25 @@
+╔══════════════════════════════════════════════════════════════╗
+║          GRTP-Kerr Simulation Pipeline — Full Run            ║
+╠══════════════════════════════════════════════════════════════╣
+║  Project : /Users/vihaa/.gemini/antigravity-ide/scratch/grtp_kerr
+║  Results : /Users/vihaa/Desktop/grtp_results_final
+║  Started : 2026-06-25 19:06:20
+╚══════════════════════════════════════════════════════════════╝
+Checking and saving Experiment 1 results...
+Saved data/exp1_efficiency.h5 to /Users/vihaa/Desktop/grtp_results_final/data/
+Saved figures/exp1_efficiency.pdf to /Users/vihaa/Desktop/grtp_results_final/figures/
+Saved figures/exp1_efficiency.png to /Users/vihaa/Desktop/grtp_results_final/figures/
+
+╔══════════════════════════════════════════════════════════════╗
+║  GRTP-Kerr  [█████████████▶░░░░░░░░░░░░░░░░]   45%                    ║
+║  Step 1 / 4  ·  Exp 1 done — Exp 2: Basin-of-Fate Maps (fractal basins)
+║  Elapsed: 00:00:00   ETA remaining: calculating...
+╚══════════════════════════════════════════════════════════════╝
+
+==============================================================
+Running Multi-Condition Basin of Fate Maps Sweep
+==============================================================
+
+---> Running configuration: a=0.50, E0=2.0, type=xpoint
+/Users/vihaa/.gemini/antigravity-ide/scratch/grtp_kerr/grtp/integrator/solver.py:331: UserWarning: Normalisation error peaked at 1.04e-07 (tolerance 1.0e-07). Consider tightening rtol/atol.
+  return integrator.integrate(y0, tau_max, n_out=n_out)

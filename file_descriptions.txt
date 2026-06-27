@@ -1,0 +1,39 @@
+================================================================================
+                    GRTP-Kerr — Main Python File Descriptions
+================================================================================
+
+1. experiments/exp1_efficiency_sweep.py
+This script evaluates the energy extraction efficiency of the magnetic Penrose process by performing a parameter sweep over black hole spins and X-point reconnection locations. It samples initial conditions for a population of charged test particles using a thermal Maxwell-Boltzmann velocity distribution in the local ZAMO frame. The particles are integrated until they either plunge into the event horizon or escape to infinity. The script then aggregates the results to calculate the overall efficiency, saving the raw data in an HDF5 dataset and plotting a publication-ready efficiency sweep heatmap.
+
+2. experiments/exp2_basin_map.py
+This script maps the basin-of-fate in the equatorial phase space for a specified black hole spin and magnetic reconnection setup. It scans a dense grid of equatorial initial conditions defined by radius and radial velocity. Each valid configuration is integrated numerically to determine if it plunges, traps, or escapes with energy gain or loss. The script creates a detailed, color-coded phase-space map that visualizes the fractal boundaries between these different particle fates. The resulting figures and dataset are exported directly to the output directories.
+
+4. grtp/integrator/equations.py
+This module defines the core system of ordinary differential equations (ODEs) representing the general-relativistic Lorentz force equations of motion. It computes the 8-dimensional right-hand side vector containing the kinematic velocity relations and the combined gravitational (Christoffel symbols) and electromagnetic (Lorentz force) accelerations. The equations are formulated in Boyer-Lindquist coordinates, utilizing metric helper functions to prevent coordinate singularities near the event horizon. Additionally, it provides diagnostic routines to compute the particle's conserved Killing energy and normalisation error along its path.
+
+5. grtp/integrator/solver.py
+This module provides a robust object-oriented wrapper around SciPy's DOP853 adaptive ODE integrator. It implements high-precision step-size controls and terminal event handlers to detect boundary crossings, halting integration immediately when a particle plunges or escapes. It supports both single-trajectory integrations and parallel batch integrations using a process pool to bypass Python's Global Interpreter Lock (GIL). A trajectory container class is defined to store the resulting proper-time, coordinate, velocity, energy, and normalization constraint diagnostics.
+
+7. grtp/spacetime/kerr.py
+This module implements the geometric properties of a rotating black hole described by the Kerr metric in Boyer-Lindquist coordinates. It calculates the metric tensor, its matrix inverse, and the 40 non-vanishing Christoffel symbols defining spacetime curvature forces. It also computes ZAMO (Zero-Angular-Velocity-Observer) orthonormal tetrad components and the lapse function to enable ZAMO-frame initial velocity sampling. The calculations are written in vectorized NumPy for efficient evaluations during the ODE solver's hot loops.
+
+8. grtp/spacetime/ergosphere.py
+This module defines critical boundary boundaries and radii on the Kerr spacetime background. It computes the coordinate radius of the event horizon, the spin-dependent ergosphere boundary, and the stability boundary of the Innermost Stable Circular Orbit (ISCO). It provides boundary testing routines to check if coordinates are within the ergosphere or have plunged past the horizon. These functions ensure that initial conditions are physically valid and set boundaries for event-detection integrals.
+
+9. grtp/fields/xpoint.py
+This module defines analytical electromagnetic field models representing magnetic reconnection current sheets overlaid on the black hole background. Its primary implementation is a 2D magnetic X-point field featuring poloidal magnetic field lines that reverse at the null point and a toroidal reconnecting electric field. It defines these field structures in the local ZAMO frame where physical intuition holds, then transforms them into Boyer-Lindquist coordinate tensors. It also contains a 1D Harris-sheet field profile for validation and comparison.
+
+10. grtp/fields/potentials.py
+This module handles the calculation of the electromagnetic 4-potential vector needed to compute the conserved total Killing energy. It solves for the potential components through numerical line integration under the Coulomb gauge relative to the analytical field tensor. To maintain performance, the calculated potential values are fitted to high-speed cubic splines, which are cached for hot-loop evaluations during trajectory integration. This enables rigorous verification of energy exchange between particles and the reconnection field.
+
+11. grtp/analysis/energy.py
+This module handles high-precision calculations of particle energy properties. It computes the conserved Killing energy by combining the mechanical energy (from the metric contract) and the electrostatic energy (from the 4-potential). It also provides batch utilities to track energy histories and efficiency parameters across completed trajectory arrays.
+
+12. grtp/analysis/topology.py
+This module classifies particle trajectories based on their final states. It defines classification constants (plunge, escape with energy gain/loss, and trapped orbits) and checks coordinate limits to determine which event terminated integration. It also aggregates batch simulation statistics to evaluate final population distributions.
+
+13. grtp/viz/basin_map.py
+This module provides functions for plotting the 2D basin-of-fate maps and efficiency heatmaps. It maps particle coordinate grids to custom color palettes (e.g. steel blue for Penrose escape, red for plunge) using matplotlib. It manages clean labels, colorbar scaling, and overlays contour lines for publication-quality figures.
+
+15. grtp/viz/trajectory.py
+This module handles standard plotting styles and trajectory visualization. It defines global styling defaults (such as font choices, dark themes, and line widths) to ensure visual consistency across all figures. It also includes functions to render individual 2D orbit projections in the poloidal (r-theta) plane.
