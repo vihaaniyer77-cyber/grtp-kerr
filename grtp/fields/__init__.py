@@ -1,5 +1,3 @@
-"""grtp.fields — Analytical EM field configurations."""
-
 from .xpoint import XPointField, HarrisSheetField, FieldProfile
 from .potentials import (
     em_potential_t,

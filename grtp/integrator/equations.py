@@ -1,7 +1,4 @@
-"""
-Right-hand side equations of motion for a charged particle under Lorentz force.
-"""
-
+"""Right-hand side equations of motion for the Lorentz force."""
 from __future__ import annotations
 
 import numpy as np

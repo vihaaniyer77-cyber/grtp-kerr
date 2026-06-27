@@ -1,43 +1,4 @@
-"""
-grtp/spacetime/kerr.py
-======================
-Kerr spacetime geometry in Boyer-Lindquist (BL) coordinates.
-
-Physical conventions
---------------------
-  Signature        : (−,+,+,+)
-  Units            : Geometrized, G = c = 1
-  Coordinates      : x^μ = (t, r, θ, φ),  index order 0, 1, 2, 3
-  Spin parameter   : a = J/M,   |a| ≤ M
-  Mass             : M  (set M = 1 for geometric units with r in units of r_g)
-
-Key scalars
------------
-  Σ ≡ r² + a² cos²θ
-  Δ ≡ r² − 2Mr + a²
-  A ≡ (r²+a²)² − Δ a² sin²θ
-
-ZAMO tetrad
------------
-  Zero Angular Momentum Observers have 4-velocity u^μ_ZAMO ∝ (1, 0, 0, ω)
-  where ω = 2Mra/A is the frame-dragging angular velocity.
-
-  The orthonormal ZAMO tetrad (covariant) basis vectors e^μ_(a) in BL coords:
-
-    e^μ_(t̂) = (α⁻¹,     0,     0,  ω/α)
-    e^μ_(r̂) = (0,  √(Δ/Σ),     0,    0)
-    e^μ_(θ̂) = (0,       0, 1/√Σ,    0)
-    e^μ_(φ̂) = (0,       0,     0,  √Σ/(sinθ √A))
-
-  with lapse  α = √(ΣΔ/A).
-
-References
-----------
-  Bardeen, Press & Teukolsky (1972), ApJ 178, 347
-  Misner, Thorne & Wheeler (1973), §33.2–33.4
-  Komissarov (2004), MNRAS 350, 427 — ZAMO tetrad form
-"""
-
+"""Kerr spacetime geometry and metric tensors."""
 from __future__ import annotations
 
 import numpy as np

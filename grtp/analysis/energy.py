@@ -1,44 +1,4 @@
-"""
-grtp/analysis/energy.py
-=======================
-Conserved quantities along test-particle trajectories in Kerr spacetime.
-
-The Kerr metric admits two Killing vectors (∂_t, ∂_φ), yielding two conserved
-quantities for *geodesic* motion (q = 0):
-
-  E_∞  = −p_t = −(g_tt u^t + g_tφ u^φ)          [Killing energy at infinity]
-  L    =  p_φ =  g_φt u^t + g_φφ u^φ             [orbital angular momentum]
-
-For charged particles in the reconnection EM field, E_∞ and L receive
-electromagnetic corrections:
-
-  E_∞  = −(g_tt u^t + g_tφ u^φ) − (q/m) A_t
-  L    =  (g_φt u^t + g_φφ u^φ) + (q/m) A_φ
-
-There is a third conserved quantity for neutral geodesics — the **Carter
-constant** Q — arising from a hidden symmetry (rank-2 Killing tensor).  It is
-NOT conserved for charged particles in a non-trivial EM field.  We include it
-as a diagnostic: its drift along a trajectory measures how much the EM field
-breaks the hidden symmetry.
-
-Energy interpretation
----------------------
-  E_∞ > 0   : unbound (can reach infinity with kinetic energy E_∞ − 1)
-  E_∞ = 0   : marginally bound (zero energy at infinity)
-  E_∞ < 0   : negative energy (inside ergosphere; drives the Penrose process)
-  E_∞ < −1  : deeply bound (rare; requires strong EM acceleration)
-
-The magnetic Penrose process: a particle with E_∞ < 0 plunges into the black
-hole, reducing its spin angular momentum.  The ejected (escape-fate) companion
-carries away E_∞ > E_initial, extracting rotational energy.
-
-References
-----------
-  Carter (1968), Phys. Rev. 174, 1559  — Carter constant
-  Bardeen, Press & Teukolsky (1972), ApJ 178, 347
-  Comisso & Asenjo (2021), PRL 127, 111101
-"""
-
+"""Calculates particle energy and normalisation."""
 from __future__ import annotations
 
 from dataclasses import dataclass

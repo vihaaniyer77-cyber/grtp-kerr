@@ -1,7 +1,4 @@
-"""
-DOP853 integrator wrapper for general-relativistic particle trajectories.
-"""
-
+"""DOP853 integrator wrapper for particle trajectories."""
 from __future__ import annotations
 
 import warnings

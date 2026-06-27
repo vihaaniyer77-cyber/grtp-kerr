@@ -1,21 +1,4 @@
-"""
-grtp/viz/basin_map.py
-=====================
-Basin-of-fate maps for Experiment 2.
-
-A basin-of-fate map colour-codes the initial-condition phase space by the
-eventual fate of each trajectory.  Fractal basin boundaries — a hallmark of
-transient chaos — appear as intricate, self-similar structures at the boundary
-between escape and plunge regions.
-
-Colour convention (consistent with topology.py):
-  ■ Steel blue  (#2E86AB) — escape with net energy gain  (Penrose process)
-  ■ Sky blue    (#89CFF0) — escape with energy loss
-  ■ Deep red    (#C0392B) — plunge into horizon
-  ■ Gold        (#D4AC0D) — trapped orbit
-  ■ Light grey  (#CCCCCC) — failed integration
-"""
-
+"""Plotting routines for 2D basin-of-fate maps."""
 from __future__ import annotations
 
 from typing import Optional

@@ -1,45 +1,4 @@
-"""
-grtp/fields/potentials.py
-=========================
-Electromagnetic 4-potential A_μ for computing conserved Killing energy.
-
-The conserved energy of a charged test particle seen from infinity is:
-
-  E_∞ = −p_t = −m (g_tt u^t + g_tφ u^φ) − q A_t
-
-where A_t is the t-component of the electromagnetic 4-potential A_μ.
-
-Gauge choice — Coulomb gauge
-----------------------------
-The potential A_μ is gauge-dependent; the physical energy difference ΔE_∞
-across the reconnection region is gauge-invariant.  We fix the **Coulomb
-gauge** by defining A_t via a line integral from a fiducial reference radius
-r_ref where the field vanishes (effectively at spatial infinity):
-
-  A_t(r, θ) = −∫_{r_ref}^{r} F_{tr}(r′, θ) dr′
-
-This follows from the static field assumption (∂_t A_r = 0):
-  F_tr = ∂_t A_r − ∂_r A_t = −∂_r A_t  ⟹  A_t(r) = −∫ F_tr dr
-
-The integral is computed using:
-  • `em_potential_t`        — one-off evaluation using Simpson's rule
-  • `build_potential_spline` — pre-computed CubicSpline for use in the hot
-                               integrator loop (avoids re-integration each step)
-
-Covariant F_{tr}
-----------------
-  F_{tr} = g_{tμ} g_{rν} F^{μν} = Σ_{μ,ν} g_{tμ} g_{rν} F^{μν}
-         = g_{tt} g_{rr} F^{tr} + g_{tφ} g_{rr} F^{φr}
-
-(Only g_{rr} appears on the r row since the Kerr metric has no off-diagonal
-r-coupling.)
-
-References
-----------
-  Wald (1974), Phys. Rev. D 10, 1680  — gauge conventions in black hole EM
-  Comisso & Asenjo (2021), PRL 127, 111101  — Killing energy in reconnection
-"""
-
+"""Electromagnetic 4-potential calculations."""
 from __future__ import annotations
 
 import numpy as np

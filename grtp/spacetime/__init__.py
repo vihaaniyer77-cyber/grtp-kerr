@@ -1,5 +1,3 @@
-"""grtp.spacetime — Kerr geometry and boundary utilities."""
-
 from .kerr import (
     kerr_scalars,
     metric,

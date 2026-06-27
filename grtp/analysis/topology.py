@@ -1,31 +1,4 @@
-"""
-grtp/analysis/topology.py
-=========================
-Orbit topology classification and basin-of-fate statistics.
-
-Every test-particle trajectory ends in one of three fates:
-
-  ESCAPE  — r exceeds r_escape: particle reaches (effective) infinity with
-             kinetic energy, potentially carrying away net energy from the BH.
-  PLUNGE  — r drops below r_+ + buffer: particle crosses the event horizon.
-  TRAPPED — Neither escape nor plunge within τ_max: orbit is in a long-lived
-             resonance or is a quasi-periodic orbit near the reconnection layer.
-
-The ESCAPE class is further divided into two astrophysically distinct outcomes:
-  ESCAPE_POSITIVE: E_∞_final > E_∞_initial  (net energy gain — Penrose process)
-  ESCAPE_NEGATIVE: E_∞_final < E_∞_initial  (particle carries less energy away)
-
-The basin-of-fate map (Experiment 2) plots these outcomes as a function of
-initial conditions (r_0, u^r_0) in the phase space near the X-point.
-Fractal basin boundaries are a signature of chaotic dynamics and are directly
-related to the positive Lyapunov exponent measured in Experiment 3.
-
-References
-----------
-  Kopáček & Karas (2014), ApJ 787, 117  — basin of attraction maps in Kerr
-  Contopoulos & Harsoula (2010), IJBC 20, 2005  — fractal basin boundaries
-"""
-
+"""Classifies trajectory fates (plunge, escape, trap)."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

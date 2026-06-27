@@ -1,24 +1,4 @@
-"""
-grtp/spacetime/ergosphere.py
-============================
-Ergosphere, event horizon, and causality boundary utilities for Kerr spacetime.
-
-The Kerr spacetime has two key surfaces:
-
-  Event horizon (outer):   r_+ = M + √(M² − a²)
-  Ergosphere (static limit): r_E(θ) = M + √(M² − a² cos²θ)
-
-The ergosphere is the region r_+ < r < r_E(θ) where the Killing vector ∂_t
-becomes spacelike (g_tt > 0).  Inside the ergosphere, no static observers exist
-and the Penrose process can extract energy from the black hole's rotation.
-
-References
-----------
-  Penrose (1969), Nuovo Cim. Riv. 1, 252
-  Bardeen, Press & Teukolsky (1972), ApJ 178, 347  — ISCO formula (§III)
-  Comisso & Asenjo (2021), PRL 127, 111101         — magnetic Penrose process
-"""
-
+"""Boundary definitions for the ergosphere and event horizon."""
 from __future__ import annotations
 
 import numpy as np

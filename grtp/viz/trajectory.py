@@ -1,20 +1,4 @@
-"""
-grtp/viz/trajectory.py
-======================
-Publication-quality trajectory plots for MNRAS submission.
-
-All figures use a consistent style inspired by Schnittman & Krolik (2018):
-  • Dark-mode background with high-contrast trajectory lines
-  • Ergosphere shown as a filled region; event horizon as a solid circle
-  • 3D Cartesian embedding of Boyer-Lindquist trajectories
-  • Energy evolution with shade-coded ergosphere crossings
-
-Coordinate transform (BL → Cartesian):
-  x = r sin θ cos φ
-  y = r sin θ sin φ
-  z = r cos θ
-"""
-
+"""Plotting routines for 2D and 3D particle trajectories."""
 from __future__ import annotations
 
 from typing import Optional, Union
