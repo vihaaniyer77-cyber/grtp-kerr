@@ -9,7 +9,7 @@ field.  Developed in support of the paper:
 
 > **"Orbital Topology and Energetics of Test Particles in Relativistic Magnetic
 > Reconnection within the Kerr Ergosphere"**
-> *Monthly Notices of the Royal Astronomical Society* (submitted)
+
 
 ---
 
@@ -144,8 +144,7 @@ Key tests:
 
 ## Citation
 
-If you use this code, please cite the accompanying MNRAS paper (BibTeX entry
-will be added upon acceptance) and this repository via its Zenodo DOI.
+Coming soon. . . 
 
 ---
 
